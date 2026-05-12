@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Fraud Detection System</title>
+  <style>
+    /* page background and font */
+    body {
+      background-color: #0f172a;
+      color: white;
+      font-family: Arial;
+      padding: 30px;
+    }
+
+    /* top heading bar */
+    .header {
+      background-color: #1e293b;
+      padding: 20px;
+      border-radius: 10px;
+      margin-bottom: 30px;
+    }
+
+    /* stat boxes row */
+    .stats {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    .stat-box {
+      background-color: #1e293b;
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+      flex: 1;
+    }
+    .stat-box h2 { color: #3b82f6; }
+    .stat-box p  { color: #94a3b8; }
+
+    /* prediction form box */
+    .form-box {
+      background-color: #1e293b;
+      padding: 30px;
+      border-radius: 10px;
+      max-width: 500px;
+      margin-bottom: 30px;
+    }
+    .form-box h3 { margin-bottom: 20px; }
+
+    /* input fields */
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      background-color: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      color: white;
+      font-size: 14px;
+    }
+
+    /* predict button */
+    button {
+      width: 100%;
+      padding: 12px;
+      background-color: #3b82f6;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    button:hover { background-color: #2563eb; }
+
+    /* result box */
+    .result {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 8px;
+      text-align: center;
+      display: none;
+    }
+    .fraud { background-color: #450a0a; border: 1px solid red; }
+    .legit { background-color: #052e16; border: 1px solid green; }
+  </style>
+</head>
+
+<body>
+
+  <!-- Header -->
+  <div class="header">
+    <h1>Cybercrime and Fraud Detection System</h1>
+    <p>Machine Learning model to detect fraudulent transactions</p>
+  </div>
+
+  <!-- Stats Row -->
+  <div class="stats">
+
+    <div class="stat-box">
+      <h2>284,807</h2>
+      <p>Total Transactions</p>
+    </div>
+
+    <div class="stat-box">
+      <h2>492</h2>
+      <p>Fraud Cases</p>
+    </div>
+
+    <div class="stat-box">
+      <h2>96.88%</h2>
+      <p>ROC-AUC Score</p>
+    </div>
+
+    <div class="stat-box">
+      <h2>81%</h2>
+      <p>Fraud Recall</p>
+    </div>
+
+  </div>
+
+  <!-- Prediction Form -->
+  <div class="form-box">
+    <h3>Check Transaction</h3>
+
+    <!-- input fields -->
+    <input type="number" id="amount" placeholder="Amount in euros (e.g. 150)">
+    <input type="number" id="time"   placeholder="Time in seconds (e.g. 3600)">
+    <input type="number" id="v1"     placeholder="V1 value (e.g. -1.35)">
+    <input type="number" id="v2"     placeholder="V2 value (e.g. 0.07)">
+    <input type="number" id="v3"     placeholder="V3 value (e.g. 2.53)">
+
+    <!-- button -->
+    <button onclick="checkFraud()">Check Transaction</button>
+
+    <!-- result appears here -->
+    <div class="result" id="result">
+      <h2 id="resultText"></h2>
+      <p  id="resultProb"></p>
+    </div>
+
+  </div>
+
+</body>
+
+<script>
+  async function checkFraud() {
+
+    // get values from input fields
+    var amount = parseFloat(document.getElementById('amount').value) || 0;
+    var time   = parseFloat(document.getElementById('time').value)   || 0;
+    var v1     = parseFloat(document.getElementById('v1').value)     || 0;
+    var v2     = parseFloat(document.getElementById('v2').value)     || 0;
+    var v3     = parseFloat(document.getElementById('v3').value)     || 0;
+
+    // create features array (30 features total)
+    var features = [time, v1, v2, v3,
+      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+      amount, 0];
+
+    // send to Flask predict route
+    var response = await fetch('/predict', {
+      method  : 'POST',
+      headers : { 'Content-Type': 'application/json' },
+      body    : JSON.stringify({ features: features })
+    });
+
+    // get result
+    var data = await response.json();
+
+    // show result box
+    var box  = document.getElementById('result');
+    box.style.display = 'block';
+
+    document.getElementById('resultText').textContent = data.status;
+    document.getElementById('resultProb').textContent = 'Fraud Probability: ' + data.probability + '%';
+
+    // change color based on fraud or legit
+    if (data.prediction === 1) {
+      box.className = 'result fraud';
+    } else {
+      box.className = 'result legit';
+    }
+  }
+</script>
+
+</html>
